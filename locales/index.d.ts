@@ -6419,9 +6419,17 @@ export interface Locale extends ILocale {
          */
         "home": string;
         /**
+         * メディア(ホーム)タイムラインでは、あなたがフォローしているアカウントのメディア付き投稿を見られます。
+         */
+        "mediaHome": string;
+        /**
          * ローカルタイムラインでは、このサーバーにいるユーザー全員の投稿を見られます。
          */
         "local": string;
+        /**
+         * メディアタイムラインでは、ソーシャルタイムラインのメディア付き投稿を見られます。
+         */
+        "media": string;
         /**
          * ソーシャルタイムラインには、ホームタイムラインとローカルタイムラインの投稿が両方表示されます。
          */
@@ -9867,9 +9875,17 @@ export interface Locale extends ILocale {
          */
         "home": string;
         /**
+         * メディア(ホーム)
+         */
+        "mediaHome": string;
+        /**
          * ローカル
          */
         "local": string;
+        /**
+         * メディア
+         */
+        "media": string;
         /**
          * ソーシャル
          */

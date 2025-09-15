@@ -220,12 +220,23 @@ function connectChannel() {
 			withFiles: props.onlyFiles ? true : undefined,
 		});
 		connection2 = stream.useChannel('main');
+	} else if (props.src === 'mediaHome') {
+	connection = stream.useChannel('homeTimeline', {
+		withRenotes: props.withRenotes,
+		withFiles: true,
+	});
+	connection2 = stream.useChannel('main');
 	} else if (props.src === 'local') {
 		connection = stream.useChannel('localTimeline', {
 			withRenotes: props.withRenotes,
 			withReplies: props.withReplies,
 			withFiles: props.onlyFiles ? true : undefined,
 		});
+	} else if (props.src === 'media') {
+		connection = stream.useChannel('hybridTimeline', {
+			withRenotes: props.withRenotes,
+			withFiles: true,
+		})
 	} else if (props.src === 'social') {
 		connection = stream.useChannel('hybridTimeline', {
 			withRenotes: props.withRenotes,
@@ -289,12 +300,24 @@ function updatePaginationQuery() {
 			withRenotes: props.withRenotes,
 			withFiles: props.onlyFiles ? true : undefined,
 		};
+	} else if (props.src === 'mediaHome') {
+		endpoint = 'notes/timeline';
+		query = {
+			withRenotes: props.withRenotes,
+			withFiles: true,
+		};
 	} else if (props.src === 'local') {
 		endpoint = 'notes/local-timeline';
 		query = {
 			withRenotes: props.withRenotes,
 			withReplies: props.withReplies,
 			withFiles: props.onlyFiles ? true : undefined,
+		};
+	} else if (props.src === 'media') {
+		endpoint = 'notes/hybrid-timeline';
+		query = {
+			withRenotes: props.withRenotes,
+			withFiles: true,
 		};
 	} else if (props.src === 'social') {
 		endpoint = 'notes/hybrid-timeline';

@@ -8,7 +8,9 @@ import { instance } from '@/instance.js';
 
 export const basicTimelineTypes = [
 	'home',
+	'mediaHome',
 	'local',
+	'media',
 	'social',
 	'global',
 ] as const;
@@ -23,8 +25,12 @@ export function basicTimelineIconClass(timeline: BasicTimelineType): string {
 	switch (timeline) {
 		case 'home':
 			return 'ti ti-home';
+		case 'mediaHome':
+			return 'ti ti-photo';
 		case 'local':
 			return 'ti ti-planet';
+		case 'media':
+			return 'ti ti-photo';	
 		case 'social':
 			return 'ti ti-universe';
 		case 'global':
@@ -36,7 +42,11 @@ export function isAvailableBasicTimeline(timeline: BasicTimelineType | undefined
 	switch (timeline) {
 		case 'home':
 			return $i != null;
+		case 'mediaHome':
+			return $i != null && !$i.policies.ltlAvailable;
 		case 'local':
+			return ($i == null && instance.policies.ltlAvailable) || ($i != null && $i.policies.ltlAvailable);
+		case 'media':
 			return ($i == null && instance.policies.ltlAvailable) || ($i != null && $i.policies.ltlAvailable);
 		case 'social':
 			return $i != null && $i.policies.ltlAvailable;

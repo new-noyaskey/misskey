@@ -98,7 +98,11 @@ async function setType() {
 		items: [{
 			value: 'home' as const, text: i18n.ts._timelines.home,
 		}, {
+			value: 'mediaHome' as const, text: i18n.ts._timelines.mediaHome,
+		}, {
 			value: 'local' as const, text: i18n.ts._timelines.local,
+		}, {
+			value: 'media' as const, text: i18n.ts._timelines.media,
 		}, {
 			value: 'social' as const, text: i18n.ts._timelines.social,
 		}, {
