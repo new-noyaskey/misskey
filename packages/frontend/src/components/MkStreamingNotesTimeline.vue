@@ -137,6 +137,14 @@ if (props.src === 'antenna') {
 		})),
 		useShallowRef: true,
 	}));
+} else if (props.src === 'media') {
+	pagenator = markRaw(new Pagenator('notes/hybrid-timeline', {
+		computedParams: computed(() => ({
+			withRenotes: props.withRenotes,
+			withReplies: props.withReplies,
+			withFiles: true,
+		}))
+	}))
 } else if (props.src === 'social') {
 	paginator = markRaw(new Paginator('notes/hybrid-timeline', {
 		computedParams: computed(() => ({
