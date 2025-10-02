@@ -18,7 +18,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		{{ i18n.ts.drafts }} ({{ currentDraftsCount }}/{{ $i?.policies.noteDraftLimit }})
 	</template>
 	<div class="_spacer">
-		<MkPagination ref="pagingEl" :pagination="paging" withControl>
+		<MkPagination :paginator="paginator" withControl>
 			<template #empty>
 				<MkResult type="empty" :text="i18n.ts._drafts.noDrafts"/>
 			</template>
@@ -42,11 +42,25 @@ SPDX-License-Identifier: AGPL-3.0-only
 											</template>
 										</I18n>
 									</div>
+									<div v-else-if="draft.replyId" class="_nowrap">
+										<i class="ti ti-arrow-back-up"></i> <I18n :src="i18n.ts._drafts.replyTo" tag="span">
+											<template #user>
+												{{ i18n.ts.deletedNote }}
+											</template>
+										</I18n>
+									</div>
 									<div v-if="draft.renote && draft.text != null" class="_nowrap">
 										<i class="ti ti-quote"></i> <I18n :src="i18n.ts._drafts.quoteOf" tag="span">
 											<template #user>
 												<Mfm v-if="draft.renote.user.name != null" :text="draft.renote.user.name" :plain="true" :nowrap="true"/>
 												<MkAcct v-else :user="draft.renote.user"/>
+											</template>
+										</I18n>
+									</div>
+									<div v-else-if="draft.renoteId" class="_nowrap">
+										<i class="ti ti-quote"></i> <I18n :src="i18n.ts._drafts.quoteOf" tag="span">
+											<template #user>
+												{{ i18n.ts.deletedNote }}
 											</template>
 										</I18n>
 									</div>
@@ -100,9 +114,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { ref, shallowRef, useTemplateRef } from 'vue';
+import { ref, shallowRef, markRaw } from 'vue';
 import * as Misskey from 'misskey-js';
-import type { PagingCtx } from '@/composables/use-pagination.js';
 import MkButton from '@/components/MkButton.vue';
 import MkPagination from '@/components/MkPagination.vue';
 import MkModalWindow from '@/components/MkModalWindow.vue';
@@ -111,6 +124,7 @@ import { i18n } from '@/i18n.js';
 import * as os from '@/os.js';
 import { $i } from '@/i.js';
 import { misskeyApi } from '@/utility/misskey-api';
+import { Paginator } from '@/utility/paginator.js';
 
 const emit = defineEmits<{
 	(ev: 'restore', draft: Misskey.entities.NoteDraft): void;
@@ -118,12 +132,9 @@ const emit = defineEmits<{
 	(ev: 'closed'): void;
 }>();
 
-const paging = {
-	endpoint: 'notes/drafts/list',
+const paginator = markRaw(new Paginator('notes/drafts/list', {
 	limit: 10,
-} satisfies PagingCtx;
-
-const pagingComponent = useTemplateRef('pagingEl');
+}));
 
 const currentDraftsCount = ref(0);
 misskeyApi('notes/drafts/count').then((count) => {
@@ -151,7 +162,7 @@ async function deleteDraft(draft: Misskey.entities.NoteDraft) {
 	if (canceled) return;
 
 	os.apiWithDialog('notes/drafts/delete', { draftId: draft.id }).then(() => {
-		pagingComponent.value?.paginator.reload();
+		paginator.reload();
 	});
 }
 </script>

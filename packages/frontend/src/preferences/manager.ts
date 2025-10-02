@@ -109,10 +109,11 @@ export function definePreferences<T extends Record<string, unknown>>(x: {
 }
 
 export function getInitialPrefValue<K extends keyof PREF>(k: K): ValueOf<K> {
-	if (typeof PREF_DEF[k].default === 'function') { // factory
-		return PREF_DEF[k].default();
+	const _default = PREF_DEF[k as string].default;
+	if (typeof _default === 'function') { // factory
+		return _default();
 	} else {
-		return PREF_DEF[k].default;
+		return _default;
 	}
 }
 
@@ -155,7 +156,7 @@ function normalizePreferences(preferences: PossiblyNonNormalizedPreferencesProfi
 			}
 			continue;
 		} else {
-			if (account && isAccountDependentKey(key as keyof typeof PREF_DEF) && !records.some(([scope]) => parseScope(scope).server === host && parseScope(scope).account === account!.id)) {
+			if (account && isAccountDependentKey(key as keyof typeof PREF_DEF) && !records.some(([scope]) => parseScope(scope).server === host && parseScope(scope).account === account.id)) {
 				data[key] = records.concat([[makeScope({
 					server: host,
 					account: account.id,
@@ -233,6 +234,7 @@ export class PreferencesManager {
 
 	// TODO: desync対策 cloudの値のfetchが正常に完了していない状態でcommitすると多分値が上書きされる
 	public commit<K extends keyof PREF>(key: K, value: ValueOf<K>) {
+		const currentAccount = this.currentAccount; // TSを黙らせるため
 		const v = JSON.parse(JSON.stringify(value)); // deep copy 兼 vueのプロキシ解除
 
 		if (deepEqual(this.s[key], v)) {
@@ -246,10 +248,10 @@ export class PreferencesManager {
 
 		const record = this.getMatchedRecordOf(key);
 
-		if (parseScope(record[0]).account == null && isAccountDependentKey(key)) {
+		if (parseScope(record[0]).account == null && isAccountDependentKey(key) && currentAccount != null) {
 			this.profile.preferences[key].push([makeScope({
 				server: host,
-				account: this.currentAccount!.id,
+				account: currentAccount.id,
 			}), v, {}]);
 			this.save();
 			return;
@@ -360,11 +362,20 @@ export class PreferencesManager {
 	}
 
 	public getMatchedRecordOf<K extends keyof PREF>(key: K): PrefRecord<K> {
+		const currentAccount = this.currentAccount; // TSを黙らせるため
+
 		const records = this.profile.preferences[key];
 
-		if (this.currentAccount == null) return records.find(([scope, v]) => parseScope(scope).account == null)!;
+		if (currentAccount == null) {
+			const record = records.find(([scope, v]) => parseScope(scope).account == null);
 
-		const accountOverrideRecord = records.find(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account === this.currentAccount!.id);
+			// 設計上あり得ないけどTSに怒られるため
+			if (record == null) throw new Error(`no record found for key: ${key}`);
+
+			return record;
+		}
+
+		const accountOverrideRecord = records.find(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account === currentAccount.id);
 		if (accountOverrideRecord) return accountOverrideRecord;
 
 		const serverOverrideRecord = records.find(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account == null);
@@ -372,39 +383,41 @@ export class PreferencesManager {
 
 		const record = records.find(([scope, v]) => parseScope(scope).account == null);
 
-		if (record == null) { // 設計上あり得ないけどTSに怒られるため
-			throw new Error(`no record found for key: ${key}`);
-		}
+		// 設計上あり得ないけどTSに怒られるため
+		if (record == null) throw new Error(`no record found for key: ${key}`);
 
 		return record;
 	}
 
 	public isAccountOverrided<K extends keyof PREF>(key: K): boolean {
-		if (this.currentAccount == null) return false;
-		return this.profile.preferences[key].some(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account === this.currentAccount!.id);
+		const currentAccount = this.currentAccount; // TSを黙らせるため
+		if (currentAccount == null) return false;
+		return this.profile.preferences[key].some(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account === currentAccount.id);
 	}
 
 	public setAccountOverride<K extends keyof PREF>(key: K) {
-		if (this.currentAccount == null) return;
+		const currentAccount = this.currentAccount; // TSを黙らせるため
+		if (currentAccount == null) return;
 		if (isAccountDependentKey(key)) throw new Error('already account-dependent');
 		if (this.isAccountOverrided(key)) return;
 
 		const records = this.profile.preferences[key];
 		records.push([makeScope({
 			server: host,
-			account: this.currentAccount!.id,
+			account: currentAccount.id,
 		}), this.s[key], {}]);
 
 		this.save();
 	}
 
 	public clearAccountOverride<K extends keyof PREF>(key: K) {
-		if (this.currentAccount == null) return;
+		const currentAccount = this.currentAccount; // TSを黙らせるため
+		if (currentAccount == null) return;
 		if (isAccountDependentKey(key)) throw new Error('cannot clear override for this account-dependent property');
 
 		const records = this.profile.preferences[key];
 
-		const index = records.findIndex(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account === this.currentAccount!.id);
+		const index = records.findIndex(([scope, v]) => parseScope(scope).server === host && parseScope(scope).account === currentAccount.id);
 		if (index === -1) return;
 
 		records.splice(index, 1);
@@ -456,6 +469,8 @@ export class PreferencesManager {
 				return local;
 			} else if (choice === 'merge') {
 				return mergedValue!;
+			} else { // TSを黙らすため
+				return undefined;
 			}
 		}
 
@@ -482,8 +497,9 @@ export class PreferencesManager {
 			os.alert({
 				type: 'error',
 				title: i18n.ts.somethingHappened,
-				text: err,
 			});
+
+			console.error(err);
 
 			return { enabled: false };
 		}
